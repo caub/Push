@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Gwit</title>
+		<script src='http://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js'></script>
+		<script src='http://localhost:8080/static/bullet.js'></script>
+		<script type='text/javascript'>
+
+		</script>
+
+	</head>
+	<body style='font-size:18px;'>
+		<p>
+			<span style='margin-left: 20px;'>Status: </span><span id='status'>not connected</span>
+			<span style='margin-left: 40px;'>Subscription: </span><span id='subcription'></span>
+			<a href='http://localhost:8080/admin/MT4' target='_blank' style='margin-left: 40px;'>Admin</a>
+		</p>
+		<p id='quotes'></p>
+		<p id='pos'></p>
+		<p id='log'></p>
+
+        <script>
+
+            var sub = [[[1,70572731],[1,70572734],[1,70572729],[1,70572733],[1,70572732]],0]; //examples of MT4 demo accounts, that must be ran with a metatrader process connected in tcp to our server, and pushing events following our schema
+
+			var bullet = $.bullet('ws://localhost:8080/bullet/' +JSON.stringify(sub));
+			bullet.onopen = function(){
+                $('#status').text('online');
+            };
+            bullet.onclose = bullet.ondisconnect = function(){
+                $('#status').text('offline');
+            };
+            bullet.onmessage = function(e){
+                var m = JSON.parse(e.data);
+                events[e.fn](e.msg);
+            };
+            bullet.onheartbeat = function(){
+                bullet.send('{"fn":"ping"}');
+            };
+
+            var events ={
+                ping: function(d){},
+                tick: function(d){console.log(d)},
+                order: function(d){console.log(d)},
+            }
+
+            //send([[1,70572734],[1,70572731]]) //change initial subscription
+            //send([[1,70572734],[1,70572731]], 2000) //change initial subscription and period
+
+
+            // http://localhost:8080/admin to see services running
+
+            //experimental, this part would require authentification or access-tokens
+            //send('check', 70572731, 443, "204.8.241.232","q8vxiye") //check account connectivity and validity, responses:
+                        // [11, 1 (connected), Swap, Bal, Equ, Marg, Freemarg, Currency]
+				        // [11, 2, 0, 0, 0, 0, 0, "Invalid account"]
+				        // [11, 3, 0, 0, 0, 0, 0, "No such host"]
+		    //send('open', 70572731, "EURUSD", 0, 2000, -1) //send open order request //must
+		    //send(close', 70572731, 20015578, 80) //send close request
+
+            function send(d) {
+                bullet.send(JSON.stringify(d));
+            }
+
+        </script>
+	</body>
+</html>
